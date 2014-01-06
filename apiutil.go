@@ -2,7 +2,6 @@ package apiutil
 
 import (
 	"encoding/json"
-	"github.com/ToQoz/rome"
 	"log"
 	"net"
 	"net/http"
@@ -13,6 +12,15 @@ import (
 
 type Config map[string]interface{}
 type HandlerFunc func(w http.ResponseWriter, r *http.Request)
+
+type Router interface {
+	Get(string, http.Handler)
+	Head(string, http.Handler)
+	Post(string, http.Handler)
+	Put(string, http.Handler)
+	Delete(string, http.Handler)
+	http.Handler
+}
 
 type APIError struct {
 	ApiStatus int    `json:"api_status"`
@@ -26,11 +34,11 @@ type APIErrors struct {
 
 type Api struct {
 	Config Config
-	*rome.Router
+	Router Router
 }
 
-func NewApi() *Api {
-	api := &Api{Config{}, rome.NewRouter()}
+func NewApi(router Router) *Api {
+	api := &Api{Config: Config{}, Router: router}
 	return api
 }
 

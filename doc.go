@@ -5,12 +5,25 @@
 /*
 Package github.com/ToQoz/apiutil is json api tools
 
-Usage.
+Router used by apiutil should be keep following interface
+
+	type Router interface {
+		Get(string, http.Handler)
+		Head(string, http.Handler)
+		Post(string, http.Handler)
+		Put(string, http.Handler)
+		Delete(string, http.Handler)
+		http.Handler
+	}
+
+Usage. (use github.com/ToQoz/rome as Router)
 
 	package main
 
 	import (
 		"github.com/ToQoz/apiutil"
+		"github.com/ToQoz/rome"
+		"os"
 	)
 
 	var (
@@ -33,7 +46,7 @@ Usage.
 	)
 
 	func main() {
-		api := apiutil.NewApi()
+		api := apiutil.NewApi(rome.NewRouter())
 
 		api.Post("/users", func(w http.ResponseWriter, r *http.Request) {
 			params := foil.NewWrappedParams(r)
