@@ -27,6 +27,7 @@ Usage. (use github.com/ToQoz/rome as Router)
 		"github.com/ToQoz/rome"
 		"net/http"
 		"os"
+		"time"
 	)
 
 	var (
@@ -50,6 +51,9 @@ Usage. (use github.com/ToQoz/rome as Router)
 
 	func main() {
 		api := api.NewApi(rome.NewRouter())
+		api.ReadTimeout = 10 * time.Second
+		api.WriteTimeout =   10 * time.Second
+		api.MaxHeaderBytes = 1 << 20
 
 		api.Post("/users", func(w http.ResponseWriter, r *http.Request) {
 			user, err := CreateUser(

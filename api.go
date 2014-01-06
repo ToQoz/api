@@ -33,12 +33,15 @@ type APIErrors struct {
 }
 
 type Api struct {
-	Config Config
-	Router Router
+	Router         Router
+	Config         Config
+	ReadTimeout    time.Duration
+	WriteTimeout   time.Duration
+	MaxHeaderBytes int
 }
 
 func NewApi(router Router) *Api {
-	api := &Api{Config: Config{}, Router: router}
+	api := &Api{Router: router, Config: Config{}}
 	return api
 }
 
@@ -133,9 +136,9 @@ func (api *Api) Run(addr string) {
 	s := &http.Server{
 		Addr:           addr,
 		Handler:        api.Router,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+		ReadTimeout:    api.ReadTimeout,
+		WriteTimeout:   api.WriteTimeout,
+		MaxHeaderBytes: api.MaxHeaderBytes,
 	}
 
 	// notify signal Interrupt to channel c
