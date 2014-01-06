@@ -21,8 +21,11 @@ Usage. (use github.com/ToQoz/rome as Router)
 	package main
 
 	import (
+		"encoding/json"
+		"fmt"
 		"github.com/ToQoz/api"
 		"github.com/ToQoz/rome"
+		"net/http"
 		"os"
 	)
 
@@ -49,16 +52,14 @@ Usage. (use github.com/ToQoz/rome as Router)
 		api := api.NewApi(rome.NewRouter())
 
 		api.Post("/users", func(w http.ResponseWriter, r *http.Request) {
-			params := foil.NewWrappedParams(r)
-
-			user, errs := CreateUser(
-				params.Value("name"),
-				params.Value("email"),
-				params.Value("password"),
+			user, err := CreateUser(
+				r.FormValue("name"),
+				r.FormValue("email"),
+				r.FormValue("password"),
 			)
 
-			if errs != nil {
-				api.Errors(w, errs)
+			if err != nil {
+				api.Error(w, err)
 				return
 			}
 
@@ -77,9 +78,11 @@ Usage. (use github.com/ToQoz/rome as Router)
 		api.Run(addr)
 	}
 
-	type User struct {}
+	type User struct {
+		Id int64
+	}
 
-	func CreateUser() (*User, error) {
+	func CreateUser(name, email, password string) (*User, error) {
 		return &User{}, nil
 	}
 */
