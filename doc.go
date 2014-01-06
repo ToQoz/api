@@ -3,9 +3,9 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package github.com/ToQoz/apiutil is json api tools
+Package github.com/ToQoz/api is json api tools
 
-Router used by apiutil should be keep following interface
+Router used by api should be keep following interface
 
 	type Router interface {
 		Get(string, http.Handler)
@@ -21,7 +21,7 @@ Usage. (use github.com/ToQoz/rome as Router)
 	package main
 
 	import (
-		"github.com/ToQoz/apiutil"
+		"github.com/ToQoz/api"
 		"github.com/ToQoz/rome"
 		"os"
 	)
@@ -46,7 +46,7 @@ Usage. (use github.com/ToQoz/rome as Router)
 	)
 
 	func main() {
-		api := apiutil.NewApi(rome.NewRouter())
+		api := api.NewApi(rome.NewRouter())
 
 		api.Post("/users", func(w http.ResponseWriter, r *http.Request) {
 			params := foil.NewWrappedParams(r)
@@ -83,4 +83,4 @@ Usage. (use github.com/ToQoz/rome as Router)
 		return &User{}, nil
 	}
 */
-package apiutil
+package api

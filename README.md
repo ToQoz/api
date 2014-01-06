@@ -1,8 +1,8 @@
-# apiutil
+# api
 
-[![Build Status](https://travis-ci.org/ToQoz/apiutil.png?branch=master)](https://travis-ci.org/ToQoz/apiutil)
+[![Build Status](https://travis-ci.org/ToQoz/api.png?branch=master)](https://travis-ci.org/ToQoz/api)
 
-see http://godoc.org/github.com/ToQoz/apiutil
+see http://godoc.org/github.com/ToQoz/api
 
 ## Requirement
 
