@@ -144,7 +144,7 @@ func (api *Api) Run(l net.Listener) {
 	}
 
 	if err != nil {
-		log.Fatalf("Could not listen: %s", api.Listener)
+		log.Fatalf("Could not listen: %s", api.Listener.Addr())
 	}
 
 	log.Printf("HTTP Server: %s", api.Listener.Addr())
