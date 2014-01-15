@@ -62,10 +62,11 @@ Usage. (use github.com/ToQoz/rome as Router)
 
 		// --- Create listener ---
 		// You can use utility, for example github.com/lestrrat/go-server-starter-listener etc.
-		l, err := net.Listen("tcp", ":8099")
+		addr := ":8099"
+		l, err := net.Listen("tcp", addr)
 
 		if err != nil {
-			log.Fatalf("Could not listen: %s", l.Addr())
+			log.Fatalf("Could not listen: %s", addr)
 		}
 
 		// --- Handle C-c ---

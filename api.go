@@ -32,12 +32,11 @@ type Router interface {
 type Api struct {
 	Router         Router
 	Config         Config
-	plugin         Plugin
 	ReadTimeout    time.Duration
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
 	Listener       net.Listener
-	Server         *http.Server
+	plugin         Plugin
 }
 
 var (
@@ -70,35 +69,25 @@ func NewApi(pluginName string, router Router) (*Api, error) {
 // --- routing helper ---
 
 func (api *Api) Get(path string, f HandlerFunc) {
-	api.Router.Get(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		api.plugin.BeforeDispatch(w, r)
-		f(w, r)
-		api.plugin.AfterDispatch(w, r)
-	}))
+	api.Router.Get(path, http.HandlerFunc(f))
 }
 
 func (api *Api) Post(path string, f HandlerFunc) {
-	api.Router.Post(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		api.plugin.BeforeDispatch(w, r)
-		f(w, r)
-		api.plugin.AfterDispatch(w, r)
-	}))
+	api.Router.Post(path, http.HandlerFunc(f))
 }
 
 func (api *Api) Put(path string, f HandlerFunc) {
-	api.Router.Put(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		api.plugin.BeforeDispatch(w, r)
-		f(w, r)
-		api.plugin.AfterDispatch(w, r)
-	}))
+	api.Router.Put(path, http.HandlerFunc(f))
 }
 
 func (api *Api) Delete(path string, f HandlerFunc) {
-	api.Router.Delete(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		api.plugin.BeforeDispatch(w, r)
-		f(w, r)
-		api.plugin.AfterDispatch(w, r)
-	}))
+	api.Router.Delete(path, http.HandlerFunc(f))
+}
+
+func (api *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	api.plugin.BeforeDispatch(w, r)
+	api.Router.ServeHTTP(w, r)
+	api.plugin.AfterDispatch(w, r)
 }
 
 // --- error helper ---
@@ -117,8 +106,8 @@ func (api *Api) Run(l net.Listener) {
 	var err error
 
 	api.Listener = l
-	api.Server = &http.Server{
-		Handler:        api.Router,
+	server := &http.Server{
+		Handler:        api,
 		ReadTimeout:    api.ReadTimeout,
 		WriteTimeout:   api.WriteTimeout,
 		MaxHeaderBytes: api.MaxHeaderBytes,
@@ -131,7 +120,7 @@ func (api *Api) Run(l net.Listener) {
 	log.Printf("HTTP Server: %s", api.Listener.Addr())
 
 	// Serve
-	log.Fatalf("Error in Serve: %s", api.Server.Serve(api.Listener))
+	log.Fatalf("Error in Serve: %s", server.Serve(api.Listener))
 }
 
 func (api *Api) Stop() {
