@@ -22,72 +22,67 @@ Usage. (use github.com/ToQoz/rome as Router)
 
 	import (
 		"encoding/json"
-		"fmt"
 		"github.com/ToQoz/api"
 		"github.com/ToQoz/rome"
+		"log"
+		"net"
 		"net/http"
 		"os"
+		"os/signal"
 		"time"
 	)
 
-	var (
-		addr = func() (port string) {
-			port = os.Getenv("PORT")
-
-			if port == "" {
-				port = ":8099"
-			}
-			return
-		}()
-		host = func() (host string) {
-			host = os.Getenv("HOST")
-
-			if host == "" {
-				host = "localhost"
-			}
-			return
-		}
-	)
-
 	func main() {
+		// --- Setup API ---
 		api := api.NewApi(rome.NewRouter())
 		api.ReadTimeout = 10 * time.Second
-		api.WriteTimeout =   10 * time.Second
+		api.WriteTimeout = 10 * time.Second
 		api.MaxHeaderBytes = 1 << 20
 
-		api.Post("/users", func(w http.ResponseWriter, r *http.Request) {
-			user, err := CreateUser(
-				r.FormValue("name"),
-				r.FormValue("email"),
-				r.FormValue("password"),
-			)
+		// --- GET / ---
+		api.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			j, err := json.Marshal(map[string]string{"hello":"world"})
 
 			if err != nil {
 				api.Error(w, err)
 				return
 			}
 
-			j, err := json.Marshal(user)
-
-			if err != nil {
-				api.Error(w, err)
-				return
-			}
-
-			w.Header().Set("Location", fmt.Sprintf("http://%s%s/users/%d", host, addr, user.Id))
-			w.WriteHeader(http.StatusCreated)
 			w.Write(j)
 		})
 
-		api.Run(addr)
-	}
+		// --- Create listener ---
+		// You can use utility, for example github.com/lestrrat/go-server-starter-listener etc.
+		l, err := net.Listen("tcp", ":8099")
 
-	type User struct {
-		Id int64
-	}
+		if err != nil {
+			log.Fatalf("Could not listen: %s", l.Addr())
+		}
 
-	func CreateUser(name, email, password string) (*User, error) {
-		return &User{}, nil
+		// --- Handle C-c ---
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+
+		go func() {
+			for sig := range c {
+				log.Print("Stopping the server...")
+
+				switch sig {
+				case os.Interrupt:
+					log.Print("Tearing down...")
+
+					// --- Stop Server ---
+					api.Stop()
+
+					log.Fatal("Finished - bye bye.  ;-)")
+				default:
+					log.Fatal("Receive unknown signal...")
+				}
+			}
+		}()
+
+		// --- Run Server ---
+		api.Run(l)
 	}
 */
 package api
