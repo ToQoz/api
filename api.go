@@ -117,8 +117,6 @@ func (api *Api) Run(l net.Listener) {
 		log.Fatalf("Could not listen: %s", api.Listener.Addr())
 	}
 
-	log.Printf("HTTP Server: %s", api.Listener.Addr())
-
 	// Serve
 	log.Fatalf("Error in Serve: %s", server.Serve(api.Listener))
 }
