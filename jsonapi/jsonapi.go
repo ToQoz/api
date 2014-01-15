@@ -37,8 +37,7 @@ func (ja *jsonApi) AfterDispatch(w http.ResponseWriter, r *http.Request) {
 	DefaultAfterDispatch(w, r)
 }
 
-// write `{message: "error content"}` with http-status-code if apiStatus is 0
-// write `{message: "error content", api_status: ApiStatus}` with http-status-code if apiStatus is NOT 0
+// write `{"message": "<<err.Error()>>", "api_status": <<apiStatus>>}` with <<httpStatus>>
 func (ja *jsonApi) Error(w http.ResponseWriter, err error, httpStatus, apiStatus int) {
 	j, marchalError := json.Marshal(&apiError{Message: err.Error(), ApiStatus: apiStatus})
 
@@ -49,8 +48,7 @@ func (ja *jsonApi) Error(w http.ResponseWriter, err error, httpStatus, apiStatus
 	http.Error(w, string(j), httpStatus)
 }
 
-// write `{errors: [{message: "error content"}, {message: "error content"}]}` with http-status-code if apiStatus is 0
-// write `{errors: [{message: "error content"}, {message: "error content"], api_status: apiStatus}` with http-status-code if apiStatus is NOT 0
+// write `{"errors": [{"message": "<err.Error()>>"}, {"message": "<err.Error()>>"], api_status: <<apiStatus>>}` with <<httpStatus>>
 func (ja *jsonApi) Errors(w http.ResponseWriter, errs []error, httpStatus, apiStatus int) {
 	aErrs := &apiErrors{ApiStatus: apiStatus}
 

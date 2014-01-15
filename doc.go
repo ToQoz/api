@@ -23,6 +23,7 @@ Usage. (use github.com/ToQoz/rome as Router)
 	import (
 		"encoding/json"
 		"github.com/ToQoz/api"
+		_ "github.com/ToQoz/api/jsonapi"
 		"github.com/ToQoz/rome"
 		"log"
 		"net"
@@ -32,9 +33,17 @@ Usage. (use github.com/ToQoz/rome as Router)
 		"time"
 	)
 
+	var (
+		ApiUnexpectedError = 100
+	)
+
 	func main() {
 		// --- Setup API ---
-		api := api.NewApi(rome.NewRouter())
+		api, err := api.NewApi("jsonapi", rome.NewRouter())
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		api.ReadTimeout = 10 * time.Second
 		api.WriteTimeout = 10 * time.Second
 		api.MaxHeaderBytes = 1 << 20
@@ -44,7 +53,7 @@ Usage. (use github.com/ToQoz/rome as Router)
 			j, err := json.Marshal(map[string]string{"hello":"world"})
 
 			if err != nil {
-				api.Error(w, err)
+				api.Error(w, err, http.StatusInternalServerError, ApiUnexpectedError)
 				return
 			}
 
