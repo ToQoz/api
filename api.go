@@ -1,7 +1,7 @@
 package api
 
 import (
-	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -11,6 +11,15 @@ import (
 type Config map[string]interface{}
 type HandlerFunc func(w http.ResponseWriter, r *http.Request)
 
+// Plugin interface. see also github.com/ToQoz/api/json/api
+type Plugin interface {
+	BeforeDispatch(w http.ResponseWriter, r *http.Request)
+	AfterDispatch(w http.ResponseWriter, r *http.Request)
+	Error(w http.ResponseWriter, err error, httpStatus, apiStatus int)
+	Errors(w http.ResponseWriter, errs []error, httpStatus, apiStatus int)
+}
+
+// Router interface. You can use favorite router keeping this interface.
 type Router interface {
 	Get(string, http.Handler)
 	Head(string, http.Handler)
@@ -20,19 +29,10 @@ type Router interface {
 	http.Handler
 }
 
-type APIError struct {
-	ApiStatus int    `json:"api_status"`
-	Message   string `json:"message"`
-}
-
-type APIErrors struct {
-	ApiStatus int         `json:"api_status"`
-	Errors    []*APIError `json:"errors"`
-}
-
 type Api struct {
 	Router         Router
 	Config         Config
+	plugin         Plugin
 	ReadTimeout    time.Duration
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
@@ -40,94 +40,75 @@ type Api struct {
 	Server         *http.Server
 }
 
-func NewApi(router Router) *Api {
-	api := &Api{Router: router, Config: Config{}}
-	return api
+var (
+	plugins = map[string]Plugin{}
+)
+
+func Register(name string, p Plugin) {
+	if p == nil {
+		panic("api: Register plugin is nil")
+	}
+
+	if _, dup := plugins[name]; dup {
+		panic("api: Register called twice for plugin " + name)
+	}
+
+	plugins[name] = p
+}
+
+func NewApi(pluginName string, router Router) (*Api, error) {
+	plugin, ok := plugins[pluginName]
+
+	if !ok {
+		return nil, fmt.Errorf("api: unknown plugin %q (forgotten import?)", pluginName)
+	}
+
+	api := &Api{Router: router, Config: Config{}, plugin: plugin}
+	return api, nil
 }
 
 // --- routing helper ---
 
 func (api *Api) Get(path string, f HandlerFunc) {
 	api.Router.Get(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		api.plugin.BeforeDispatch(w, r)
 		f(w, r)
+		api.plugin.AfterDispatch(w, r)
 	}))
 }
 
 func (api *Api) Post(path string, f HandlerFunc) {
 	api.Router.Post(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		api.plugin.BeforeDispatch(w, r)
 		f(w, r)
+		api.plugin.AfterDispatch(w, r)
 	}))
 }
 
 func (api *Api) Put(path string, f HandlerFunc) {
 	api.Router.Put(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		api.plugin.BeforeDispatch(w, r)
 		f(w, r)
+		api.plugin.AfterDispatch(w, r)
 	}))
 }
 
 func (api *Api) Delete(path string, f HandlerFunc) {
 	api.Router.Delete(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		api.plugin.BeforeDispatch(w, r)
 		f(w, r)
+		api.plugin.AfterDispatch(w, r)
 	}))
 }
 
 // --- error helper ---
 
-// write `{message: "error content"}` with http-status-code:http.StatusInternalServerError
-func (api *Api) Error(w http.ResponseWriter, err error) {
-	api.ErrorWithHttpStatusAndApiStatus(w, err, http.StatusInternalServerError, 0)
+func (api *Api) Error(w http.ResponseWriter, err error, httpStatus, apiStatus int) {
+	api.plugin.Error(w, err, httpStatus, apiStatus)
 }
 
-// write `{message: "error content"}` with http-status-code
-func (api *Api) ErrorWithHttpStatus(w http.ResponseWriter, err error, httpStatus int) {
-	api.ErrorWithHttpStatusAndApiStatus(w, err, httpStatus, 0)
-}
-
-// write `{message: "error content"}` with http-status-code and api-status-code
-func (api *Api) ErrorWithHttpStatusAndApiStatus(w http.ResponseWriter, err error, httpStatus, apiStatus int) {
-	log.Print(err.Error())
-
-	j, marchalError := json.Marshal(&APIError{Message: err.Error(), ApiStatus: apiStatus})
-
-	if marchalError != nil {
-		panic(marchalError)
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	http.Error(w, string(j), httpStatus)
-}
-
-// write `{errors: [{message: "error content"}, {message: "error content"}]}` with http-status-code:http.StatusInternalServerError
-func (api *Api) Errors(w http.ResponseWriter, errs []error) {
-	api.ErrorsWithHttpStatusAndApiStatus(w, errs, http.StatusInternalServerError, 0)
-}
-
-// write `{errors: [{message: "error content"}, {message: "error content"}]}` with http-status-code
-func (api *Api) ErrorsWithHttpStatus(w http.ResponseWriter, errs []error, httpStatus int) {
-	api.ErrorsWithHttpStatusAndApiStatus(w, errs, httpStatus, 0)
-}
-
-// write `{errors: [{message: "error content"}, {message: "error content"}]}` with http-status-code and api-status-code
-func (api *Api) ErrorsWithHttpStatusAndApiStatus(w http.ResponseWriter, errs []error, httpStatus, apiStatus int) {
-	apiErrors := &APIErrors{ApiStatus: apiStatus}
-
-	for _, err := range errs {
-		log.Print(err.Error())
-		apiErrors.Errors = append(apiErrors.Errors, &APIError{Message: err.Error()})
-	}
-
-	j, marchalError := json.Marshal(apiErrors)
-
-	if marchalError != nil {
-		panic(marchalError)
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	http.Error(w, string(j), httpStatus)
+func (api *Api) Errors(w http.ResponseWriter, errs []error, httpStatus, apiStatus int) {
+	api.plugin.Errors(w, errs, httpStatus, apiStatus)
 }
 
 // --- server helper ---
