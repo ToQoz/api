@@ -5,8 +5,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
-	"os/signal"
 	"time"
 )
 
@@ -38,6 +36,8 @@ type Api struct {
 	ReadTimeout    time.Duration
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
+	Listener       net.Listener
+	Server         *http.Server
 }
 
 func NewApi(router Router) *Api {
@@ -49,28 +49,28 @@ func NewApi(router Router) *Api {
 
 func (api *Api) Get(path string, f HandlerFunc) {
 	api.Router.Get(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "apilication/json; charset=utf-8")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		f(w, r)
 	}))
 }
 
 func (api *Api) Post(path string, f HandlerFunc) {
 	api.Router.Post(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "apilication/json; charset=utf-8")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		f(w, r)
 	}))
 }
 
 func (api *Api) Put(path string, f HandlerFunc) {
 	api.Router.Put(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "apilication/json; charset=utf-8")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		f(w, r)
 	}))
 }
 
 func (api *Api) Delete(path string, f HandlerFunc) {
 	api.Router.Delete(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "apilication/json; charset=utf-8")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		f(w, r)
 	}))
 }
@@ -97,7 +97,7 @@ func (api *Api) ErrorWithHttpStatusAndApiStatus(w http.ResponseWriter, err error
 		panic(marchalError)
 	}
 
-	w.Header().Set("Content-Type", "apilication/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	http.Error(w, string(j), httpStatus)
 }
 
@@ -126,44 +126,33 @@ func (api *Api) ErrorsWithHttpStatusAndApiStatus(w http.ResponseWriter, errs []e
 		panic(marchalError)
 	}
 
-	w.Header().Set("Content-Type", "apilication/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	http.Error(w, string(j), httpStatus)
 }
 
 // --- server helper ---
 
-func (api *Api) Run(addr string) {
-	s := &http.Server{
-		Addr:           addr,
+func (api *Api) Run(l net.Listener) {
+	var err error
+
+	api.Listener = l
+	api.Server = &http.Server{
 		Handler:        api.Router,
 		ReadTimeout:    api.ReadTimeout,
 		WriteTimeout:   api.WriteTimeout,
 		MaxHeaderBytes: api.MaxHeaderBytes,
 	}
 
-	// notify signal Interrupt to channel c
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	listener, err := net.Listen("tcp", addr)
-
 	if err != nil {
-		log.Fatalf("Could not listen: %s", addr)
+		log.Fatalf("Could not listen: %s", api.Listener)
 	}
 
-	go func() {
-		for _ = range c {
-			// sig is a ^C, handle it
-			log.Print("Stopping the server...")
-			listener.Close()
+	log.Printf("HTTP Server: %s", api.Listener.Addr())
 
-			log.Print("Tearing down...")
-			log.Fatal("Finished - bye bye.  ;-)")
+	// Serve
+	log.Fatalf("Error in Serve: %s", api.Server.Serve(api.Listener))
+}
 
-		}
-	}()
-
-	log.Printf("HTTP Server: %s", addr)
-
-	log.Fatalf("Error in Serve: %s", s.Serve(listener))
+func (api *Api) Stop() {
+	api.Listener.Close()
 }
