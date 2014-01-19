@@ -3,28 +3,16 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package github.com/ToQoz/api is json api tools
+Package github.com/ToQoz/plugin is tiny and flexible toolkit for creating api server.
 
-Router used by api should be keep following interface
+Simple usage. If you want to see more example, check github.com/ToQoz/dou/example/full
 
-	type Router interface {
-		Get(string, http.Handler)
-		Head(string, http.Handler)
-		Post(string, http.Handler)
-		Put(string, http.Handler)
-		Delete(string, http.Handler)
-		http.Handler
-	}
-
-Usage. (use github.com/ToQoz/rome as Router)
-
-	package main
+package main
 
 	import (
-		"encoding/json"
-		"github.com/ToQoz/api"
-		_ "github.com/ToQoz/api/jsonapi"
-		"github.com/ToQoz/rome"
+		"errors"
+		"github.com/ToQoz/dou"
+		_ "github.com/ToQoz/dou/jsonapi"
 		"log"
 		"net"
 		"net/http"
@@ -33,13 +21,34 @@ Usage. (use github.com/ToQoz/rome as Router)
 		"time"
 	)
 
-	var (
-		ApiUnexpectedError = 100
-	)
+	// --- API Error type ---
+
+	type apiError struct {
+		Message string `json:"message"`
+	}
+
+	func newApiError(err error) *apiError {
+		return &apiError{Message: err.Error()}
+	}
+
+	type apiErrors struct {
+		Errors []*apiError `json:"errors"`
+	}
+
+	func newApiErrors(errs []error) *apiErrors {
+		aErrs := &apiErrors{}
+
+		for _, err := range errs {
+			aErrs.Errors = append(aErrs.Errors, newApiError(err))
+		}
+
+		return aErrs
+	}
 
 	func main() {
-		// --- Setup API ---
-		api, err := api.NewApi("jsonapi", rome.NewRouter())
+		defer teardown()
+
+		api, err := dou.NewApi("jsonapi")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -48,26 +57,33 @@ Usage. (use github.com/ToQoz/rome as Router)
 		api.WriteTimeout = 10 * time.Second
 		api.MaxHeaderBytes = 1 << 20
 
-		// --- GET / ---
-		api.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			j, err := json.Marshal(map[string]string{"hello":"world"})
-
-			if err != nil {
-				api.Error(w, err, http.StatusInternalServerError, ApiUnexpectedError)
-				return
+		// --- Map routes ---
+		api.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/":
+				api.Ok(w, map[string]string{"hello": "world"}, http.StatusOK)
+			case "/error":
+				err := errors.New("some error occur")
+				api.Error(w, newApiError(err), http.StatusInternalServerError)
+			case "/errors":
+				var errs []error
+				errs = append(errs, errors.New("1 error occur"))
+				errs = append(errs, errors.New("2 error occur"))
+				api.Error(w, newApiErrors(errs), http.StatusInternalServerError)
+			default:
+				api.Error(w, map[string]string{"message": http.StatusText(http.StatusNotFound)}, http.StatusNotFound)
 			}
-
-			w.Write(j)
 		})
 
 		// --- Create listener ---
 		// You can use utility, for example github.com/lestrrat/go-server-starter-listener etc.
-		addr := ":8099"
-		l, err := net.Listen("tcp", addr)
+		l, err := net.Listen("tcp", ":8099")
 
 		if err != nil {
-			log.Fatalf("Could not listen: %s", addr)
+			log.Fatalf("Could not listen: %s", ":8099")
 		}
+
+		log.Printf("Listen: %s", ":8099")
 
 		// --- Handle C-c ---
 		c := make(chan os.Signal, 1)
@@ -79,14 +95,11 @@ Usage. (use github.com/ToQoz/rome as Router)
 
 				switch sig {
 				case os.Interrupt:
-					log.Print("Tearing down...")
-
 					// --- Stop Server ---
 					api.Stop()
-
-					log.Fatal("Finished - bye bye.  ;-)")
+					return
 				default:
-					log.Fatal("Receive unknown signal...")
+					log.Print("Receive unknown signal...")
 				}
 			}
 		}()
@@ -94,5 +107,22 @@ Usage. (use github.com/ToQoz/rome as Router)
 		// --- Run Server ---
 		api.Run(l)
 	}
+
+	func teardown() {
+		log.Print("Tearing down...")
+		log.Print("Finished - bye bye.  ;-)")
+	}
+
+You can creating a custom plugin in accordance with your api type or domain-specific use-case.
+The plugin should keep following interface.
+
+	type Plugin interface {
+		Recover(w http.ResponseWriter, r *http.Request)
+		BeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
+		AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
+		Marshal(v interface{}) ([]byte, error)
+		Unmarshal(data []byte, v interface{}) error
+		ApiStatus(w http.ResponseWriter, code int)
+	}
 */
-package api
+package dou

@@ -1,8 +1,8 @@
-# api
+# Dou(胴)
 
-[![Build Status](https://travis-ci.org/ToQoz/api.png?branch=master)](https://travis-ci.org/ToQoz/api)
+[![Build Status](https://travis-ci.org/ToQoz/dou.png?branch=master)](https://travis-ci.org/ToQoz/dou)
 
-see http://godoc.org/github.com/ToQoz/api
+see http://godoc.org/github.com/ToQoz/dou
 
 ## Requirement
 
