@@ -117,7 +117,7 @@ You can creating a custom plugin in accordance with your api type or domain-spec
 The plugin should keep following interface.
 
 	type Plugin interface {
-		Recover(w http.ResponseWriter, r *http.Request)
+		OnPanic(w http.ResponseWriter, r *http.Request)
 		BeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 		AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 		Marshal(v interface{}) ([]byte, error)

@@ -41,12 +41,12 @@ func (ja *jsonApi) AfterDispatch(w http.ResponseWriter, r *http.Request) (http.R
 	return w, r
 }
 
-// Recover is called when panic occur.
-func (ja *jsonApi) Recover(w http.ResponseWriter, r *http.Request) {
+// OnPanic is called when panic occur.
+func (ja *jsonApi) OnPanic(w http.ResponseWriter, r *http.Request) {
 	// if api.SafeWriter.Write called before occuring panic,
 	// this will not write response body and header.
-	// Because it is meaningless and foolish that jsonplugin.Recover break response body.
-	// Example: Write([]byte("{}") -> some proccess -> panic -> jsonplugin.Recover -> Write([]byte(`{"message": "Internal Server Error"}`))
+	// Because it is meaningless and foolish that jsonplugin.OnPanic break response body.
+	// Example: Write([]byte("{}") -> some proccess -> panic -> jsonplugin.OnPanic -> Write([]byte(`{"message": "Internal Server Error"}`))
 	//          -> Response body is {}{"message": "Internal Server Error"}.
 	if sw, ok := w.(*dou.SafeWriter); ok {
 		if sw.Wrote {

@@ -30,7 +30,7 @@ func (p *testApi) AfterDispatch(w http.ResponseWriter, r *http.Request) (http.Re
 	return w, r
 }
 
-func (p *testApi) Recover(w http.ResponseWriter, r *http.Request) {
+func (p *testApi) OnPanic(w http.ResponseWriter, r *http.Request) {
 	p.recoverCalled = true
 }
 
@@ -77,7 +77,7 @@ func TestCallBeforeDispatchAndAfterDispatch(t *testing.T) {
 	}
 }
 
-func TestCallRecoverIfOccurPanicInHandler(t *testing.T) {
+func TestCallOnPanicIfOccurPanicInHandler(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
@@ -103,7 +103,7 @@ func TestCallRecoverIfOccurPanicInHandler(t *testing.T) {
 	a.ServeHTTP(response, request)
 
 	if !ta.recoverCalled {
-		t.Error("Plugin.Recover should be called")
+		t.Error("Plugin.OnPanic should be called")
 	}
 }
 

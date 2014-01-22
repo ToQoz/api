@@ -21,7 +21,7 @@ type Config map[string]interface{}
 // You can create Plugin like a github.com/ToQoz/dou/jsonapi in accordance the use.
 // see also github.com/ToQoz/dou/jsonapi
 type Plugin interface {
-	Recover(w http.ResponseWriter, r *http.Request)
+	OnPanic(w http.ResponseWriter, r *http.Request)
 	BeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 	AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 	Marshal(v interface{}) ([]byte, error)
@@ -33,7 +33,7 @@ type Plugin interface {
 // For prevent unintentionally multiple calling http.ResponseWriter.Write, this has bool `Worte`.
 // When recovering panic, this is useful for prevent unintentionally writing to the continuation that was written before panic.
 // Example: Write([]byte(`[]`)) ->
-//          SomeFunc() -> (panic) -> Recover() ->
+//          SomeFunc() -> (panic) -> OnPanic() ->
 //          Write(`{"message": "Internal server erorr"}`)
 // In ideal theory that I think, we have to prevent panic after calling Write. But no accident, no life :)
 type SafeWriter struct {
@@ -72,9 +72,9 @@ type Api struct {
 	// This will be set default func in NewApi. It simply call Plugin.AfterDispatch()
 	AfterDispatch func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 
-	// You change Recover behavior that provided by plugin overriding this.
-	// This will be set default func in NewApi. It simply call Plugin.Recover()
-	Recover func(w http.ResponseWriter, r *http.Request)
+	// You change OnPanic behavior that provided by plugin overriding this.
+	// This will be set default func in NewApi. It simply call Plugin.OnPanic()
+	OnPanic func(w http.ResponseWriter, r *http.Request)
 }
 
 // Register makes a database driver available by the provided name.
@@ -123,8 +123,8 @@ func NewApi(pluginName string) (*Api, error) {
 		return api.Plugin.AfterDispatch(w, r)
 	}
 
-	api.Recover = func(w http.ResponseWriter, r *http.Request) {
-		api.Plugin.Recover(w, r)
+	api.OnPanic = func(w http.ResponseWriter, r *http.Request) {
+		api.Plugin.OnPanic(w, r)
 	}
 
 	return api, nil
@@ -145,22 +145,22 @@ func NewApiWithHandler(pluginName string, handler http.Handler) (*Api, error) {
 //     1. call BeforeDispatch()
 //     2. call Router.ServeHTTP()
 //     3. call AfterDispatch()
-// And call Recover when panic occur.
+// And call OnPanic when panic occur.
 // if panic occur before calling Api.AfterDispatch, this call it after recovering.
 func (api *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sw := NewSafeWriter(w)
 
-	// Recover if occur panic in Api.BeforeDispatch or Router.ServeHTTP
+	// OnPanic if occur panic in Api.BeforeDispatch or Router.ServeHTTP
 	recoverFuncIfPanicOccur := func() {
 		if recv := recover(); recv != nil {
 			if api.LogStackTrace {
 				stacktrace := make([]byte, 2048)
 				runtime.Stack(stacktrace, false)
 
-				log.Printf("github.com/ToQoz/dou: Recover panic in Api.ServeHTTP: %s\n%s", recv, stacktrace)
+				log.Printf("github.com/ToQoz/dou: OnPanic panic in Api.ServeHTTP: %s\n%s", recv, stacktrace)
 			}
 
-			api.Recover(sw, r)
+			api.OnPanic(sw, r)
 		}
 	}
 
@@ -196,7 +196,7 @@ func (api *Api) Ok(w http.ResponseWriter, resource interface{}, httpStatusCode i
 
 	if err != nil {
 		// Unexpected error.
-		// Recover will be called.
+		// OnPanic will be called.
 		panic(err)
 	}
 
@@ -228,7 +228,7 @@ func (api *Api) Error(w http.ResponseWriter, resource interface{}, httpStatusCod
 
 	if err != nil {
 		// Unexpected error.
-		// Recover will be called.
+		// OnPanic will be called.
 		panic(err)
 	}
 

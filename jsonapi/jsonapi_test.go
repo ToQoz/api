@@ -61,8 +61,8 @@ func TestEnableToOverrideDefaultContentType(t *testing.T) {
 	}
 }
 
-// Recover should write response if panic occur
-func TestRecoverWriteErrorMessage(t *testing.T) {
+// OnPanic should write response if panic occur
+func TestOnPanicWriteErrorMessage(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
@@ -91,7 +91,7 @@ func TestRecoverWriteErrorMessage(t *testing.T) {
 	switch {
 	case strings.HasPrefix(gotContentType, "application/json;"):
 		if string(response.Body.Bytes()) == "" {
-			t.Error("Recover should write error message.")
+			t.Error("OnPanic should write error message.")
 		} else {
 
 			gotJson := map[string]string{}
@@ -102,20 +102,20 @@ func TestRecoverWriteErrorMessage(t *testing.T) {
 			}
 
 			if gotJson["message"] != http.StatusText(http.StatusInternalServerError) {
-				t.Errorf("Recover wrote invalid error message. (got) = %s", response.Body.Bytes())
+				t.Errorf("OnPanic wrote invalid error message. (got) = %s", response.Body.Bytes())
 			}
 		}
 	case strings.HasPrefix(gotContentType, "text/plain;"):
 		if string(response.Body.Bytes()) != http.StatusText(http.StatusInternalServerError) {
-			t.Errorf("Recover wrote invalid error message. (expect) = %s, (got) = %s", http.StatusText(http.StatusInternalServerError), response.Body.Bytes())
+			t.Errorf("OnPanic wrote invalid error message. (expect) = %s, (got) = %s", http.StatusText(http.StatusInternalServerError), response.Body.Bytes())
 		}
 	default:
 		t.Errorf("Unexpected Content-Type. (expect has prefix) = text/plain or application/json, (got) = %v", gotContentType)
 	}
 }
 
-// Recover should not write if response is already written before panic occur
-func TestRecoverDontWriteIfResponseIsAlreadyWrittenBeforePanicOccur(t *testing.T) {
+// OnPanic should not write if response is already written before panic occur
+func TestOnPanicDontWriteIfResponseIsAlreadyWrittenBeforePanicOccur(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
@@ -137,7 +137,7 @@ func TestRecoverDontWriteIfResponseIsAlreadyWrittenBeforePanicOccur(t *testing.T
 	a.ServeHTTP(response, request)
 
 	if !bytes.Equal(response.Body.Bytes(), []byte("hello")) {
-		t.Error("Recover should not write response if response is written before panic occur")
+		t.Error("OnPanic should not write response if response is written before panic occur")
 	}
 }
 
