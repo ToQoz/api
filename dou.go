@@ -130,17 +130,6 @@ func NewApi(pluginName string) (*Api, error) {
 	return api, nil
 }
 
-func NewApiWithHandler(pluginName string, handler http.Handler) (*Api, error) {
-	api, err := NewApi(pluginName)
-
-	if err != nil {
-		return nil, err
-	}
-
-	api.Handler = handler
-	return api, nil
-}
-
 // ServeHTTP calls
 //     1. call BeforeDispatch()
 //     2. call Router.ServeHTTP()

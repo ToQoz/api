@@ -54,7 +54,8 @@ func TestCallBeforeDispatchAndAfterDispatch(t *testing.T) {
 	Register("testapi", ta)
 	defer delete(plugins, "testapi")
 
-	a, err := NewApiWithHandler("testapi", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	a, err := NewApi("testapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	if err != nil {
 		panic(err)
@@ -86,9 +87,10 @@ func TestCallOnPanicIfOccurPanicInHandler(t *testing.T) {
 	Register("testapi", ta)
 	defer delete(plugins, "testapi")
 
-	a, err := NewApiWithHandler("testapi", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	a, err := NewApi("testapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("<test panic>")
-	}))
+	})
 
 	if err != nil {
 		panic(err)
@@ -116,9 +118,10 @@ func TestCallAfterDispatchIfOccurPanicInHandler(t *testing.T) {
 	Register("testapi", ta)
 	defer delete(plugins, "testapi")
 
-	a, err := NewApiWithHandler("testapi", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	a, err := NewApi("testapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("<test panic>")
-	}))
+	})
 
 	if err != nil {
 		panic(err)

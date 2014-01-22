@@ -102,7 +102,8 @@ func main() {
 	})
 
 	// --- Setup API ---
-	api, err := dou.NewApiWithHandler("jsonapi", router)
+	api, err := dou.NewApi("jsonapi")
+	api.Handler = router
 	//api, err := dou.NewApi("jsonapi")
 	if err != nil {
 		log.Fatal(err)

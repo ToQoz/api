@@ -15,8 +15,9 @@ func TestSetDefaultContentType(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
-	a, err := dou.NewApiWithHandler("jsonapi", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	}))
+	a, err := dou.NewApi("jsonapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	})
 
 	if err != nil {
 		panic(err)
@@ -40,9 +41,10 @@ func TestEnableToOverrideDefaultContentType(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
-	a, err := dou.NewApiWithHandler("jsonapi", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	a, err := dou.NewApi("jsonapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
-	}))
+	})
 
 	if err != nil {
 		panic(err)
@@ -66,9 +68,10 @@ func TestOnPanicWriteErrorMessage(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
-	a, err := dou.NewApiWithHandler("jsonapi", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	a, err := dou.NewApi("jsonapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("<test panic>")
-	}))
+	})
 
 	if err != nil {
 		panic(err)
@@ -119,10 +122,11 @@ func TestOnPanicDontWriteIfResponseIsAlreadyWrittenBeforePanicOccur(t *testing.T
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
-	a, err := dou.NewApiWithHandler("jsonapi", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	a, err := dou.NewApi("jsonapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("hello"))
 		panic("<test panic>")
-	}))
+	})
 
 	if err != nil {
 		panic(err)
