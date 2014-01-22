@@ -71,7 +71,9 @@ func main() {
 	l, err := net.Listen("tcp", ":8099")
 
 	if err != nil {
-		log.Fatalf("Could not listen: %s", ":8099")
+		log.Printf("Could not listen: %s", ":8099")
+		teardown()
+		os.Exit(1)
 	}
 
 	log.Printf("Listen: %s", ":8099")

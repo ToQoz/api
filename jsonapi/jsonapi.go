@@ -10,12 +10,6 @@ import (
 )
 
 var (
-	BeforeDispatchFunc = func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-		return DefaultBeforeDispatch(w, r)
-	}
-	AfterDispatchFunc = func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-		return DefaultAfterDispatch(w, r)
-	}
 	ApiStatus = func(w http.ResponseWriter, code int) {
 		DefaultApiStatus(w, code)
 	}
@@ -24,15 +18,6 @@ var (
 // Register this plugin as "jsonapi"
 func init() {
 	dou.Register("jsonapi", &jsonApi{})
-}
-
-func DefaultBeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	return w, r
-}
-
-func DefaultAfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-	return w, r
 }
 
 // DefaultApiStatus sets code to X-API-Status header.
@@ -45,24 +30,15 @@ func DefaultApiStatus(w http.ResponseWriter, code int) {
 
 type jsonApi struct{}
 
-// BeforeDispatch is called before dispatch.
-// You change behavior by overriding jsonapi.BeforeDispatch.
+// BeforeDispatch is default func for before dispatch.
 func (ja *jsonApi) BeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-	if BeforeDispatchFunc == nil {
-		return w, r
-	}
-
-	return BeforeDispatchFunc(w, r)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	return w, r
 }
 
-// BeforeDispatch is called after dispatch.
-// You change behavior overriding jsonapi.AfterDispatch.
+// AfterDispatch is default func for after dispatch.
 func (ja *jsonApi) AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-	if AfterDispatchFunc == nil {
-		return w, r
-	}
-
-	return AfterDispatchFunc(w, r)
+	return w, r
 }
 
 // Recover is called when panic occur.

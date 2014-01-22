@@ -54,14 +54,27 @@ func (sw *SafeWriter) Write(p []byte) (int, error) {
 // Api adds a few triggers to http.Handler and provide a few useful helpers for creating api.
 // Thanks of plugin system, Api don't need to be responsible for many compatible content-type and api domain rule.
 type Api struct {
-	Handler        http.Handler
-	Config         Config
-	ReadTimeout    time.Duration
-	WriteTimeout   time.Duration
-	MaxHeaderBytes int
-	Listener       net.Listener
-	LogStackTrace  bool
-	plugin         Plugin
+	Handler       http.Handler
+	Config        Config
+	Listener      net.Listener
+	Plugin        Plugin
+	LogStackTrace bool // Log stack trace when panic occur
+
+	ReadTimeout    time.Duration // for http.Server
+	WriteTimeout   time.Duration // for http.Server
+	MaxHeaderBytes int           // for http.Server
+
+	// You change BeforeDispatch behavior that provided by plugin overriding this.
+	// This will be set default func in NewApi. It simply call Plugin.BeforeDispatch()
+	BeforeDispatch func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
+
+	// You change AfterDispatch behavior that provided by plugin overriding this.
+	// This will be set default func in NewApi. It simply call Plugin.AfterDispatch()
+	AfterDispatch func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
+
+	// You change Recover behavior that provided by plugin overriding this.
+	// This will be set default func in NewApi. It simply call Plugin.Recover()
+	Recover func(w http.ResponseWriter, r *http.Request)
 }
 
 // Register makes a database driver available by the provided name.
@@ -99,8 +112,20 @@ func NewApi(pluginName string) (*Api, error) {
 
 	api := new(Api)
 	api.Config = Config{}
-	api.plugin = plugin
+	api.Plugin = plugin
 	api.LogStackTrace = true
+
+	api.BeforeDispatch = func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+		return api.Plugin.BeforeDispatch(w, r)
+	}
+
+	api.AfterDispatch = func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+		return api.Plugin.AfterDispatch(w, r)
+	}
+
+	api.Recover = func(w http.ResponseWriter, r *http.Request) {
+		api.Plugin.Recover(w, r)
+	}
 
 	return api, nil
 }
@@ -117,42 +142,42 @@ func NewApiWithHandler(pluginName string, handler http.Handler) (*Api, error) {
 }
 
 // ServeHTTP calls
-//     1. call plugin.BeforeDispatch()
-//     2. call plugin.ServeHTTP()
-//     3. call plugin.AfterDispatch()
-// And call plugin.Recover when panic occur.
-// if panic occur before calling Api.plugin.AfterDispatch, this call it after recovering.
+//     1. call BeforeDispatch()
+//     2. call Router.ServeHTTP()
+//     3. call AfterDispatch()
+// And call Recover when panic occur.
+// if panic occur before calling Api.AfterDispatch, this call it after recovering.
 func (api *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sw := NewSafeWriter(w)
 
-	// Recover if occur panic in Api.plugin.BeforeDispatch or plugin.Router.ServeHTTP
-	recoverFunc := func() {
+	// Recover if occur panic in Api.BeforeDispatch or Router.ServeHTTP
+	recoverFuncIfPanicOccur := func() {
 		if recv := recover(); recv != nil {
 			if api.LogStackTrace {
 				stacktrace := make([]byte, 2048)
 				runtime.Stack(stacktrace, false)
 
-				log.Printf("github.com/ToQoz/dou: Recover panic in plugin.ServeHTTP: %s\n%s", recv, stacktrace)
+				log.Printf("github.com/ToQoz/dou: Recover panic in Api.ServeHTTP: %s\n%s", recv, stacktrace)
 			}
 
-			api.plugin.Recover(sw, r)
+			api.Recover(sw, r)
 		}
 	}
 
-	// Even if panic occur in Api.plugin.BeforeDispatch or Api.Handler.ServerHTTP,
-	// Api.plugin.AfterDispatch should be called.
-	// Because we sometimes use Api.plugin.AfterDispatch as cleauper,
-	// and response body is created before calling Api.plugin.AfterDispatch.
+	// Even if panic occur in Api.Plugin.BeforeDispatch or Api.Handler.ServerHTTP,
+	// Api.Plugin.AfterDispatch should be called.
+	// Because we sometimes use Api.Plugin.AfterDispatch as cleauper,
+	// and response body is created before calling Api.Plugin.AfterDispatch.
 
 	func() {
-		defer recoverFunc()
-		w, r = api.plugin.BeforeDispatch(sw, r)
+		defer recoverFuncIfPanicOccur()
+		w, r = api.BeforeDispatch(sw, r)
 		api.Handler.ServeHTTP(w, r)
 	}()
 
 	func() {
-		defer recoverFunc()
-		api.plugin.AfterDispatch(w, r)
+		defer recoverFuncIfPanicOccur()
+		api.AfterDispatch(w, r)
 	}()
 }
 
@@ -171,7 +196,7 @@ func (api *Api) Ok(w http.ResponseWriter, resource interface{}, httpStatusCode i
 
 	if err != nil {
 		// Unexpected error.
-		// plugin.plugin.Recover will be called.
+		// Recover will be called.
 		panic(err)
 	}
 
@@ -203,7 +228,7 @@ func (api *Api) Error(w http.ResponseWriter, resource interface{}, httpStatusCod
 
 	if err != nil {
 		// Unexpected error.
-		// plugin.plugin.Recover will be called.
+		// Recover will be called.
 		panic(err)
 	}
 
@@ -224,26 +249,26 @@ func (api *Api) Error(w http.ResponseWriter, resource interface{}, httpStatusCod
 }
 
 // ----------------------------------------------------------------------------
-// Export plugin's func `ApiStatus/Marshal/Unmarshal`. They has possibility to be used from outside of Api.
+// Export Plugin's func `ApiStatus/Marshal/Unmarshal`. They has possibility to be used from outside of Api.
 // ----------------------------------------------------------------------------
 
 // ApiStatus write api status code.
-// It will be implemented by api.plugin.
+// It will be implemented by api.Plugin.
 // e.g. github.com/ToQoz/dou/jsonapi Use "X-API-Status" header.
 func (api *Api) ApiStatus(w http.ResponseWriter, apiStatusCode int) {
-	api.plugin.ApiStatus(w, apiStatusCode)
+	api.Plugin.ApiStatus(w, apiStatusCode)
 }
 
 // Marshal encode v.
 // Encoding procedure will be implemented by api.plugin
 func (api *Api) Marshal(v interface{}) ([]byte, error) {
-	return api.plugin.Marshal(v)
+	return api.Plugin.Marshal(v)
 }
 
 // Unarshal encode v.
 // Decoding procedure will be implemented by api.plugin
 func (api *Api) Unmarshal(data []byte, v interface{}) error {
-	return api.plugin.Unmarshal(data, v)
+	return api.Plugin.Unmarshal(data, v)
 }
 
 // ----------------------------------------------------------------------------

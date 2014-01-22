@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ToQoz/dou"
-	"github.com/ToQoz/dou/jsonapi"
+	_ "github.com/ToQoz/dou/jsonapi"
 	"github.com/ToQoz/rome"
 	"github.com/lestrrat/go-apache-logformat"
 	"log"
@@ -102,27 +102,29 @@ func main() {
 	})
 
 	// --- Setup API ---
-	jsonapi.BeforeDispatchFunc = func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-		w, r = jsonapi.DefaultBeforeDispatch(w, r)
+	api, err := dou.NewApiWithHandler("jsonapi", router)
+	//api, err := dou.NewApi("jsonapi")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	api.BeforeDispatch = func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+		// Call default
+		w, r = api.Plugin.BeforeDispatch(w, r)
 
 		lw := apachelog.NewLoggingWriter(w, r, logger)
 		return lw, r
 	}
 
-	jsonapi.AfterDispatchFunc = func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
-		w, r = jsonapi.DefaultAfterDispatch(w, r)
+	api.AfterDispatch = func(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+		// Call default
+		w, r = api.Plugin.AfterDispatch(w, r)
 
 		if lw, ok := w.(*apachelog.LoggingWriter); ok {
 			lw.EmitLog()
 		}
 
 		return w, r
-	}
-
-	api, err := dou.NewApiWithHandler("jsonapi", router)
-	//api, err := dou.NewApi("jsonapi")
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	api.ReadTimeout = 10 * time.Second
@@ -173,7 +175,9 @@ func main() {
 	l, err := net.Listen("tcp", ":8099")
 
 	if err != nil {
-		log.Fatalf("Could not listen: %s", ":8099")
+		log.Printf("Could not listen: %s", ":8099")
+		teardown()
+		os.Exit(1)
 	}
 
 	log.Printf("Listen: %s", ":8099")
