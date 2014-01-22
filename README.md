@@ -9,9 +9,9 @@ see http://godoc.org/github.com/ToQoz/dou
 
 ## By the way
 
-- 胴 means that dou is not fullstack but it can become perfect by cooperating with other package. And this make it easy to do.
-- 道 means that dou provide minimum way by dou.Api.plugin.
-- 銅 means that dou is not gold. And this is soft because you can override plugin behaviour by override funcs.
+- `胴` means that dou is not fullstack but when cooperating with other package, it can become perfect. And it is easy to do.
+- `道` means that dou provide minimum way by plugin system.
+- `銅` means that dou is not gold. And dou is soft(flexible) because you can override behaviour provided by plugin.
 
 ## Requirement
 
