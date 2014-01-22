@@ -9,23 +9,9 @@ import (
 	"strconv"
 )
 
-var (
-	ApiStatus = func(w http.ResponseWriter, code int) {
-		DefaultApiStatus(w, code)
-	}
-)
-
 // Register this plugin as "jsonapi"
 func init() {
 	dou.Register("jsonapi", &jsonApi{})
-}
-
-// DefaultApiStatus sets code to X-API-Status header.
-// X-API-Status means domestic application status.
-// Sometimes api status can't be expressed only by http status.
-// See http://blog.yappo.jp/yappo/archives/000829.html
-func DefaultApiStatus(w http.ResponseWriter, code int) {
-	w.Header().Set("X-API-Status", strconv.Itoa(code))
 }
 
 type jsonApi struct{}
@@ -86,13 +72,10 @@ func (ja *jsonApi) Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
-// ApiStatus sets domestic application status.
-// By default, sets it to X-API-JSON header.
-// You change it by overriding jsonapi.ApiStatus.
+// ApiStatus sets code to X-API-Status header.
+// X-API-Status means domestic application status.
+// Sometimes api status can't be expressed only by http status.
+// See http://blog.yappo.jp/yappo/archives/000829.html
 func (ja *jsonApi) ApiStatus(w http.ResponseWriter, code int) {
-	if ApiStatus == nil {
-		return
-	}
-
-	ApiStatus(w, code)
+	w.Header().Set("X-API-Status", strconv.Itoa(code))
 }

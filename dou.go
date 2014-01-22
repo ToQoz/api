@@ -75,6 +75,11 @@ type Api struct {
 	// You change OnPanic behavior that provided by plugin overriding this.
 	// This will be set default func in NewApi. It simply call Plugin.OnPanic()
 	OnPanic func(w http.ResponseWriter, r *http.Request)
+
+	// ApiStatus write api status code.
+	// It will be implemented by api.Plugin.
+	// e.g. github.com/ToQoz/dou/jsonapi Use "X-API-Status" header.
+	ApiStatus func(w http.ResponseWriter, code int)
 }
 
 // Register makes a database driver available by the provided name.
@@ -125,6 +130,10 @@ func NewApi(pluginName string) (*Api, error) {
 
 	api.OnPanic = func(w http.ResponseWriter, r *http.Request) {
 		api.Plugin.OnPanic(w, r)
+	}
+
+	api.ApiStatus = func(w http.ResponseWriter, code int) {
+		api.Plugin.ApiStatus(w, code)
 	}
 
 	return api, nil
@@ -238,15 +247,8 @@ func (api *Api) Error(w http.ResponseWriter, resource interface{}, httpStatusCod
 }
 
 // ----------------------------------------------------------------------------
-// Export Plugin's func `ApiStatus/Marshal/Unmarshal`. They has possibility to be used from outside of Api.
+// Export Plugin's func `Marshal/Unmarshal`. They has possibility to be used from outside of Api.
 // ----------------------------------------------------------------------------
-
-// ApiStatus write api status code.
-// It will be implemented by api.Plugin.
-// e.g. github.com/ToQoz/dou/jsonapi Use "X-API-Status" header.
-func (api *Api) ApiStatus(w http.ResponseWriter, apiStatusCode int) {
-	api.Plugin.ApiStatus(w, apiStatusCode)
-}
 
 // Marshal encode v.
 // Encoding procedure will be implemented by api.plugin
