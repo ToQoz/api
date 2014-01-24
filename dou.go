@@ -34,7 +34,7 @@ type Plugin interface {
 // When recovering panic, this is useful for prevent unintentionally writing to the continuation that was written before panic.
 // Example: Write([]byte(`[]`)) ->
 //          SomeFunc() -> (panic) -> OnPanic() ->
-//          Write(`{"message": "Internal server erorr"}`)
+//          Write(`{"message": "Internal server error"}`)
 // In ideal theory that I think, we have to prevent panic after calling Write. But no accident, no life :)
 type SafeWriter struct {
 	Wrote bool
