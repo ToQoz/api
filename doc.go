@@ -7,7 +7,7 @@ Package github.com/ToQoz/dou is tiny and flexible toolkit for creating a api ser
 
 Simple usage. If you want to see more example, check github.com/ToQoz/dou/example/full
 
-package main
+	package main
 
 	import (
 		"errors"
