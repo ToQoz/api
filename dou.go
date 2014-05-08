@@ -258,7 +258,7 @@ func (api *Api) Marshal(v interface{}) ([]byte, error) {
 	return api.Plugin.Marshal(v)
 }
 
-// Unarshal encode v.
+// Unmarshal encode v.
 // Decoding procedure will be implemented by api.plugin
 func (api *Api) Unmarshal(data []byte, v interface{}) error {
 	return api.Plugin.Unmarshal(data, v)
