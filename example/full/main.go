@@ -51,11 +51,13 @@ func newAPIErrors(errs []error) *apiErrors {
 
 var users = []*User{}
 
+// User represents a user account.
 type User struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
 
+// Validate validate fields.
 func (u *User) Validate() []error {
 	var errs []error
 
@@ -70,6 +72,7 @@ func (u *User) Validate() []error {
 	return errs
 }
 
+// Save save to memory
 func (u *User) Save() error {
 	users = append(users, u)
 	return nil
