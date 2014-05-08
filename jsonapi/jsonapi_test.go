@@ -97,14 +97,14 @@ func TestOnPanicWriteErrorMessage(t *testing.T) {
 			t.Error("OnPanic should write error message.")
 		} else {
 
-			gotJson := map[string]string{}
-			err := json.Unmarshal(response.Body.Bytes(), &gotJson)
+			gotJSON := map[string]string{}
+			err := json.Unmarshal(response.Body.Bytes(), &gotJSON)
 
 			if err != nil {
 				panic(err)
 			}
 
-			if gotJson["message"] != http.StatusText(http.StatusInternalServerError) {
+			if gotJSON["message"] != http.StatusText(http.StatusInternalServerError) {
 				t.Errorf("OnPanic wrote invalid error message. (got) = %s", response.Body.Bytes())
 			}
 		}
