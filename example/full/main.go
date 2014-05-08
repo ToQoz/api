@@ -17,8 +17,11 @@ import (
 )
 
 var (
-	APIStatusOk              = 1
+	// APIStatusOk define ok status code for X-API-Status
+	APIStatusOk = 1
+	// APIStatusValidationError define validation error status code for X-API-Status
 	APIStatusValidationError = 100
+	// APIStatusUnexpectedError define unexpected error status code for X-API-Status
 	APIStatusUnexpectedError = 900
 	logger                   = apachelog.CombinedLog
 )
