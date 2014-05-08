@@ -27,7 +27,7 @@ Simple usage. If you want to see more example, check github.com/ToQoz/dou/exampl
 		Message string `json:"message"`
 	}
 
-	func newApiError(err error) *apiError {
+	func newAPIError(err error) *apiError {
 		return &apiError{Message: err.Error()}
 	}
 
@@ -35,11 +35,11 @@ Simple usage. If you want to see more example, check github.com/ToQoz/dou/exampl
 		Errors []*apiError `json:"errors"`
 	}
 
-	func newApiErrors(errs []error) *apiErrors {
+	func newAPIErrors(errs []error) *apiErrors {
 		aErrs := &apiErrors{}
 
 		for _, err := range errs {
-			aErrs.Errors = append(aErrs.Errors, newApiError(err))
+			aErrs.Errors = append(aErrs.Errors, newAPIError(err))
 		}
 
 		return aErrs
@@ -48,7 +48,7 @@ Simple usage. If you want to see more example, check github.com/ToQoz/dou/exampl
 	func main() {
 		defer teardown()
 
-		api, err := dou.NewApi("jsonapi")
+		api, err := dou.NewAPI("jsonapi")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -64,12 +64,12 @@ Simple usage. If you want to see more example, check github.com/ToQoz/dou/exampl
 				api.Ok(w, map[string]string{"hello": "world"}, http.StatusOK)
 			case "/error":
 				err := errors.New("some error occur")
-				api.Error(w, newApiError(err), http.StatusInternalServerError)
+				api.Error(w, newAPIError(err), http.StatusInternalServerError)
 			case "/errors":
 				var errs []error
 				errs = append(errs, errors.New("1 error occur"))
 				errs = append(errs, errors.New("2 error occur"))
-				api.Error(w, newApiErrors(errs), http.StatusInternalServerError)
+				api.Error(w, newAPIErrors(errs), http.StatusInternalServerError)
 			default:
 				api.Error(w, map[string]string{"message": http.StatusText(http.StatusNotFound)}, http.StatusNotFound)
 			}

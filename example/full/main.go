@@ -29,7 +29,7 @@ type apiError struct {
 	Message string `json:"message"`
 }
 
-func newApiError(err error) *apiError {
+func newAPIError(err error) *apiError {
 	return &apiError{Message: err.Error()}
 }
 
@@ -37,11 +37,11 @@ type apiErrors struct {
 	Errors []*apiError `json:"errors"`
 }
 
-func newApiErrors(errs []error) *apiErrors {
+func newAPIErrors(errs []error) *apiErrors {
 	aErrs := &apiErrors{}
 
 	for _, err := range errs {
-		aErrs.Errors = append(aErrs.Errors, newApiError(err))
+		aErrs.Errors = append(aErrs.Errors, newAPIError(err))
 	}
 
 	return aErrs
@@ -102,9 +102,9 @@ func main() {
 	})
 
 	// --- Setup API ---
-	api, err := dou.NewApi("jsonapi")
+	api, err := dou.NewAPI("jsonapi")
 	api.Handler = router
-	//api, err := dou.NewApi("jsonapi")
+	//api, err := dou.NewAPI("jsonapi")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func main() {
 
 		if len(errs) > 0 {
 			api.APIStatus(w, APIStatusValidationError)
-			api.Error(w, newApiErrors(errs), 422)
+			api.Error(w, newAPIErrors(errs), 422)
 			return
 		}
 
@@ -163,7 +163,7 @@ func main() {
 
 		if err != nil {
 			api.APIStatus(w, APIStatusUnexpectedError)
-			api.Error(w, newApiErrors(errs), http.StatusInternalServerError)
+			api.Error(w, newAPIErrors(errs), http.StatusInternalServerError)
 			return
 		}
 
