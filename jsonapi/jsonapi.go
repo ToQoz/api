@@ -11,24 +11,24 @@ import (
 
 // Register this plugin as "jsonapi"
 func init() {
-	dou.Register("jsonapi", &jsonApi{})
+	dou.Register("jsonapi", &jsonAPI{})
 }
 
-type jsonApi struct{}
+type jsonAPI struct{}
 
 // BeforeDispatch is default func for before dispatch.
-func (ja *jsonApi) BeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+func (ja *jsonAPI) BeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return w, r
 }
 
 // AfterDispatch is default func for after dispatch.
-func (ja *jsonApi) AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+func (ja *jsonAPI) AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
 	return w, r
 }
 
 // OnPanic is called when panic occur.
-func (ja *jsonApi) OnPanic(w http.ResponseWriter, r *http.Request) {
+func (ja *jsonAPI) OnPanic(w http.ResponseWriter, r *http.Request) {
 	// if api.SafeWriter.Write called before occuring panic,
 	// this will not write response body and header.
 	// Because it is meaningless and foolish that jsonplugin.OnPanic break response body.
@@ -63,12 +63,12 @@ func (ja *jsonApi) OnPanic(w http.ResponseWriter, r *http.Request) {
 }
 
 // Marshal a interface to a JSON.
-func (ja *jsonApi) Marshal(v interface{}) ([]byte, error) {
+func (ja *jsonAPI) Marshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
 
 // Unmarshal JSON to a interface.
-func (ja *jsonApi) Unmarshal(data []byte, v interface{}) error {
+func (ja *jsonAPI) Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
@@ -76,6 +76,6 @@ func (ja *jsonApi) Unmarshal(data []byte, v interface{}) error {
 // X-API-Status means domestic application status.
 // Sometimes api status can't be expressed only by http status.
 // See http://blog.yappo.jp/yappo/archives/000829.html
-func (ja *jsonApi) APIStatus(w http.ResponseWriter, code int) {
+func (ja *jsonAPI) APIStatus(w http.ResponseWriter, code int) {
 	w.Header().Set("X-API-Status", strconv.Itoa(code))
 }
