@@ -42,6 +42,7 @@ type SafeWriter struct {
 	http.ResponseWriter
 }
 
+// NewSafeWriter new SafeWriter by given http.ResponseWriter
 func NewSafeWriter(w http.ResponseWriter) *SafeWriter {
 	return &SafeWriter{false, w}
 }
