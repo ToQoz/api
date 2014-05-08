@@ -122,7 +122,7 @@ The plugin should keep following interface.
 		AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 		Marshal(v interface{}) ([]byte, error)
 		Unmarshal(data []byte, v interface{}) error
-		ApiStatus(w http.ResponseWriter, code int)
+		APIStatus(w http.ResponseWriter, code int)
 	}
 */
 package dou

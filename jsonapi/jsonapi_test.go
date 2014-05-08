@@ -145,14 +145,14 @@ func TestOnPanicDontWriteIfResponseIsAlreadyWrittenBeforePanicOccur(t *testing.T
 	}
 }
 
-// ApiStatus should set X-API-Status header
-func TestApiStatus(t *testing.T) {
+// APIStatus should set X-API-Status header
+func TestAPIStatus(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
 	a, err := dou.NewApi("jsonapi")
 	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		a.ApiStatus(w, 999)
+		a.APIStatus(w, 999)
 	})
 
 	if err != nil {
@@ -168,6 +168,6 @@ func TestApiStatus(t *testing.T) {
 	a.ServeHTTP(response, request)
 
 	if response.Header().Get("X-API-Status") != "999" {
-		t.Errorf("ApiStatus should set X-API-Status. (expect) = \"999\", but (got) = %v", response.Header().Get("X-API-Status"))
+		t.Errorf("APIStatus should set X-API-Status. (expect) = \"999\", but (got) = %v", response.Header().Get("X-API-Status"))
 	}
 }

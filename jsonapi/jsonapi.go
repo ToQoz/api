@@ -72,10 +72,10 @@ func (ja *jsonApi) Unmarshal(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
-// ApiStatus sets code to X-API-Status header.
+// APIStatus sets code to X-API-Status header.
 // X-API-Status means domestic application status.
 // Sometimes api status can't be expressed only by http status.
 // See http://blog.yappo.jp/yappo/archives/000829.html
-func (ja *jsonApi) ApiStatus(w http.ResponseWriter, code int) {
+func (ja *jsonApi) APIStatus(w http.ResponseWriter, code int) {
 	w.Header().Set("X-API-Status", strconv.Itoa(code))
 }

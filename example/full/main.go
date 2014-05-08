@@ -17,9 +17,9 @@ import (
 )
 
 var (
-	ApiStatusOk              = 1
-	ApiStatusValidationError = 100
-	ApiStatusUnexpectedError = 900
+	APIStatusOk              = 1
+	APIStatusValidationError = 100
+	APIStatusUnexpectedError = 900
 	logger                   = apachelog.CombinedLog
 )
 
@@ -134,12 +134,12 @@ func main() {
 
 	// --- Map routes ---
 	router.GetFunc("/users", func(w http.ResponseWriter, r *http.Request) {
-		api.ApiStatus(w, ApiStatusOk)
+		api.APIStatus(w, APIStatusOk)
 		api.Ok(w, users, http.StatusOK)
 	})
 
 	router.GetFunc("/error", func(w http.ResponseWriter, r *http.Request) {
-		api.ApiStatus(w, ApiStatusUnexpectedError)
+		api.APIStatus(w, APIStatusUnexpectedError)
 		api.Error(w, map[string]string{"message": "Internal server error"}, http.StatusInternalServerError)
 	})
 
@@ -154,7 +154,7 @@ func main() {
 		errs := u.Validate()
 
 		if len(errs) > 0 {
-			api.ApiStatus(w, ApiStatusValidationError)
+			api.APIStatus(w, APIStatusValidationError)
 			api.Error(w, newApiErrors(errs), 422)
 			return
 		}
@@ -162,12 +162,12 @@ func main() {
 		err := u.Save()
 
 		if err != nil {
-			api.ApiStatus(w, ApiStatusUnexpectedError)
+			api.APIStatus(w, APIStatusUnexpectedError)
 			api.Error(w, newApiErrors(errs), http.StatusInternalServerError)
 			return
 		}
 
-		api.ApiStatus(w, ApiStatusOk)
+		api.APIStatus(w, APIStatusOk)
 		api.Ok(w, u, http.StatusCreated)
 	})
 

@@ -14,42 +14,42 @@ func newRecorder() *recorder {
 	return &recorder{calledTime: 0}
 }
 
-type testApi struct {
+type testAPI struct {
 	beforeDispatchCalled bool
 	afterDispatchCalled  bool
 	recoverCalled        bool
 }
 
-func (p *testApi) BeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+func (p *testAPI) BeforeDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
 	p.beforeDispatchCalled = true
 	return w, r
 }
 
-func (p *testApi) AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
+func (p *testAPI) AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request) {
 	p.afterDispatchCalled = true
 	return w, r
 }
 
-func (p *testApi) OnPanic(w http.ResponseWriter, r *http.Request) {
+func (p *testAPI) OnPanic(w http.ResponseWriter, r *http.Request) {
 	p.recoverCalled = true
 }
 
-func (p *testApi) Marshal(v interface{}) ([]byte, error) {
+func (p *testAPI) Marshal(v interface{}) ([]byte, error) {
 	return nil, nil
 }
 
-func (p *testApi) Unmarshal(data []byte, v interface{}) error {
+func (p *testAPI) Unmarshal(data []byte, v interface{}) error {
 	return nil
 }
 
-func (p *testApi) ApiStatus(w http.ResponseWriter, code int) {
+func (p *testAPI) APIStatus(w http.ResponseWriter, code int) {
 }
 
 func TestCallBeforeDispatchAndAfterDispatch(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
-	ta := &testApi{}
+	ta := &testAPI{}
 
 	Register("testapi", ta)
 	defer delete(plugins, "testapi")
@@ -82,7 +82,7 @@ func TestCallOnPanicIfOccurPanicInHandler(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
-	ta := &testApi{}
+	ta := &testAPI{}
 
 	Register("testapi", ta)
 	defer delete(plugins, "testapi")
@@ -113,7 +113,7 @@ func TestCallAfterDispatchIfOccurPanicInHandler(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
 
-	ta := &testApi{}
+	ta := &testAPI{}
 
 	Register("testapi", ta)
 	defer delete(plugins, "testapi")

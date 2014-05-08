@@ -26,7 +26,7 @@ type Plugin interface {
 	AfterDispatch(w http.ResponseWriter, r *http.Request) (http.ResponseWriter, *http.Request)
 	Marshal(v interface{}) ([]byte, error)
 	Unmarshal(data []byte, v interface{}) error
-	ApiStatus(w http.ResponseWriter, code int)
+	APIStatus(w http.ResponseWriter, code int)
 }
 
 // SafeWriter is safe http.ResponseWriter
@@ -76,10 +76,10 @@ type Api struct {
 	// This will be set default func in NewApi. It simply call Plugin.OnPanic()
 	OnPanic func(w http.ResponseWriter, r *http.Request)
 
-	// ApiStatus write api status code.
+	// APIStatus write api status code.
 	// It will be implemented by api.Plugin.
 	// e.g. github.com/ToQoz/dou/jsonapi Use "X-API-Status" header.
-	ApiStatus func(w http.ResponseWriter, code int)
+	APIStatus func(w http.ResponseWriter, code int)
 }
 
 // Register makes a database driver available by the provided name.
@@ -132,8 +132,8 @@ func NewApi(pluginName string) (*Api, error) {
 		api.Plugin.OnPanic(w, r)
 	}
 
-	api.ApiStatus = func(w http.ResponseWriter, code int) {
-		api.Plugin.ApiStatus(w, code)
+	api.APIStatus = func(w http.ResponseWriter, code int) {
+		api.Plugin.APIStatus(w, code)
 	}
 
 	return api, nil
