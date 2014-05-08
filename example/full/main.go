@@ -60,11 +60,11 @@ func (u *User) Validate() []error {
 	var errs []error
 
 	if u.Name == "" {
-		errs = append(errs, errors.New("User: name is required"))
+		errs = append(errs, errors.New("user: name is required"))
 	}
 
 	if u.Email == "" {
-		errs = append(errs, errors.New("User: email is required"))
+		errs = append(errs, errors.New("user: email is required"))
 	}
 
 	return errs
