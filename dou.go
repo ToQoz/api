@@ -14,6 +14,7 @@ var (
 	plugins = map[string]Plugin{}
 )
 
+// Config can store configuration map for Api.
 type Config map[string]interface{}
 
 // Plugin is interface for dou.Api plugin.
