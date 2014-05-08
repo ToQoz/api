@@ -7,19 +7,9 @@ before_script:
   - go get code.google.com/p/go.tools/cmd/cover
   - go get github.com/mattn/goveralls
   - go build -v ./...
-script: go test -v ./...
-after_script:
-  - COVERMODE=count
-  - HEADER="mode: $COVERMODE"
-  - COVPARTIAL=profile.cov.out
-  - COV=profile-all.cov.out
-  - XARGS_ARG=DIR
-  - CMD_COV="go test $XARGS_ARG -covermode=$COVERMODE -coverprofile=$XARGS_ARG/$COVPARTIAL"
-  - CMD_CHECKDIR="ls $XARGS_ARG/$COVPARTIAL > /dev/null 2>&1"
-  - CMD_CONCATCOV="cat $XARGS_ARG/$COVPARTIAL | grep -v '$HEADER' >> $COV"
-  - echo $HEADER > $COV
-  - find ./*  -maxdepth 10 -name '*.go' | xargs dirname | uniq | xargs -I$XARGS_ARG sh -c "$CMD_COV && $CMD_CHECKDIR && $CMD_CONCATCOV"
-  - goveralls -coverprofile=$COV -service=travis-ci
+script:
+  - go test -v ./...
+  - ./coveralls
 notifications:
   email:
     recipients:
