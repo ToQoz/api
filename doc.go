@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package github.com/ToQoz/dou is tiny and flexible toolkit for creating a api server.
+Package dou is tiny and flexible toolkit for creating a api server.
 
 Simple usage. If you want to see more example, check github.com/ToQoz/dou/example/full
 
