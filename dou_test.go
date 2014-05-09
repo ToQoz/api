@@ -59,6 +59,29 @@ func (p *testAPI) Unmarshal(data []byte, v interface{}) error {
 func (p *testAPI) APIStatus(w http.ResponseWriter, code int) {
 }
 
+// - Test
+
+func TestNewAPIWithUnregisteredPluginName(t *testing.T) {
+	api, err := NewAPI("unknown")
+
+	if api != nil {
+		t.Error("If NewAPI called with unknown plugin name, api should be nil")
+	}
+
+	if err == nil {
+		t.Error("If NewAPI called with unknown plugin name, api should not be nil")
+	}
+}
+
+func TestDeregister(t *testing.T) {
+	Register("testapi", &testAPI{})
+	Deregister("testapi")
+
+	if _, ok := plugins["testapi"]; ok != false {
+		t.Error("Deregister should delete registered plugin")
+	}
+}
+
 func TestCallBeforeDispatchAndAfterDispatch(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
