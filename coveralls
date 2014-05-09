@@ -24,6 +24,7 @@ echo $HEADER > $COV_FILE
 
 find ./*  -maxdepth 10 -name '*.go' -print0 | $XARGS -r0 -L1 dirname | uniq | $XARGS -I$XARGS_ARG sh -c "$CMD_COV && ($CMD_CHECKDIR && $CMD_CONCATCOV) || exit 0"
 
-
+cat $COV_FILE
+go tool cover -func=$COV_FILE
 
 $GOVERALLS -coverprofile=$COV_FILE -service=travis-ci
