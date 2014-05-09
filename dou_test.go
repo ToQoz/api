@@ -3,6 +3,7 @@ package dou
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
@@ -134,4 +135,35 @@ func TestCallAfterDispatchIfOccurPanicInHandler(t *testing.T) {
 	if !ta.afterDispatchCalled {
 		t.Error("Plugin.AfterDispatch should be called")
 	}
+}
+
+func TestNewSafeWriter(t *testing.T) {
+	request, _ := http.NewRequest("GET", "/", nil)
+	response := httptest.NewRecorder()
+
+	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sw := NewSafeWriter(w)
+
+		if !reflect.DeepEqual(sw.ResponseWriter, w) {
+			t.Error("NewSafeWriter should set given value to .ResponseWriter")
+		}
+
+		if sw.Wrote != false {
+			t.Error("NewSafeWriter should set false to .wrote")
+		}
+	}).ServeHTTP(response, request)
+}
+
+func TestNewSafeWriterWrite(t *testing.T) {
+	request, _ := http.NewRequest("GET", "/", nil)
+	response := httptest.NewRecorder()
+
+	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sw := NewSafeWriter(w)
+		sw.Write([]byte("hello"))
+
+		if sw.Wrote != true {
+			t.Error("NewSafeWriter.Wrote should be true after called Write")
+		}
+	}).ServeHTTP(response, request)
 }
