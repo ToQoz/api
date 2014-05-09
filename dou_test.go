@@ -1,9 +1,11 @@
 package dou
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -35,12 +37,22 @@ func (p *testAPI) OnPanic(w http.ResponseWriter, r *http.Request) {
 	p.recoverCalled = true
 }
 
-func (p *testAPI) Marshal(v interface{}) ([]byte, error) {
+// Enable to stub
+var testAPIMarshal = func(v interface{}) ([]byte, error) {
 	return nil, nil
 }
 
-func (p *testAPI) Unmarshal(data []byte, v interface{}) error {
+func (p *testAPI) Marshal(v interface{}) ([]byte, error) {
+	return testAPIMarshal(v)
+}
+
+// Enable to stub
+var testAPIUnmarshal = func(data []byte, v interface{}) error {
 	return nil
+}
+
+func (p *testAPI) Unmarshal(data []byte, v interface{}) error {
+	return testAPIUnmarshal(data, v)
 }
 
 func (p *testAPI) APIStatus(w http.ResponseWriter, code int) {
@@ -166,4 +178,141 @@ func TestNewSafeWriterWrite(t *testing.T) {
 			t.Error("NewSafeWriter.Wrote should be true after called Write")
 		}
 	}).ServeHTTP(response, request)
+}
+func TestAPIOkSetGivenHTTPStatusCodeAndResponseBody(t *testing.T) {
+	request, _ := http.NewRequest("GET", "/", nil)
+	response := httptest.NewRecorder()
+
+	Register("testapi", &testAPI{})
+	defer delete(plugins, "testapi")
+
+	expectedBodyString := "stubed testAPIMarshal"
+	expectedCode := http.StatusCreated
+
+	// stub testAPI.Marshal
+	testAPIMarshal = func(v interface{}) ([]byte, error) {
+		return []byte(expectedBodyString), nil
+	}
+
+	a, err := NewAPI("testapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		a.Ok(w, "", expectedCode)
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	a.ServeHTTP(response, request)
+
+	// [Test] http status code
+	if response.Code != expectedCode {
+		t.Errorf("API.OK should set given status code\nexpected: %v\ngot: %v\n", expectedCode, response.Code)
+	}
+
+	// [Test] responseBody
+	gotBody, err := ioutil.ReadAll(response.Body)
+
+	if err != nil {
+		panic(err)
+	}
+
+	gotBodyString := strings.TrimSuffix(string(gotBody), "\n")
+
+	if gotBodyString != expectedBodyString {
+		t.Errorf("API.OK should marshal given resource and write it\nexpected: %v\ngot: %v\n", expectedBodyString, gotBodyString)
+	}
+}
+
+func TestAPIOkSet200IfGiven0AsHTTPStatusCode(t *testing.T) {
+	request, _ := http.NewRequest("GET", "/", nil)
+	response := httptest.NewRecorder()
+
+	Register("testapi", &testAPI{})
+	defer delete(plugins, "testapi")
+
+	a, err := NewAPI("testapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		a.Ok(w, "", 0)
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	a.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Errorf("API.OK should set 200 if given 0\nexpected: %v\ngot: %v\n", http.StatusOK, response.Code)
+	}
+
+}
+
+func TestAPIErrorSetGivenHTTPStatusCodeAndResponseBody(t *testing.T) {
+	request, _ := http.NewRequest("GET", "/", nil)
+	response := httptest.NewRecorder()
+
+	Register("testapi", &testAPI{})
+	defer delete(plugins, "testapi")
+
+	expectedBodyString := "stubed testAPIMarshal"
+	expectedCode := http.StatusNotFound
+
+	// stub testAPI.Marshal
+	testAPIMarshal = func(v interface{}) ([]byte, error) {
+		return []byte(expectedBodyString), nil
+	}
+
+	a, err := NewAPI("testapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		a.Error(w, "", expectedCode)
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	a.ServeHTTP(response, request)
+
+	// [Test] http status code
+	if response.Code != expectedCode {
+		t.Errorf("API.Error should set given status code\nexpected: %v\ngot: %v\n", expectedCode, response.Code)
+	}
+
+	// [Test] responseBody
+	gotBody, err := ioutil.ReadAll(response.Body)
+
+	if err != nil {
+		panic(err)
+	}
+
+	gotBodyString := strings.TrimSuffix(string(gotBody), "\n")
+
+	if gotBodyString != expectedBodyString {
+		t.Errorf("API.Error should marshal given resource and write it\nexpected: \"%v\"\ngot: \"%v\"\n", expectedBodyString, gotBodyString)
+	}
+}
+
+func TestAPIErrorSet500IfGiven0AsHTTPStatusCode(t *testing.T) {
+	request, _ := http.NewRequest("GET", "/", nil)
+	response := httptest.NewRecorder()
+
+	Register("testapi", &testAPI{})
+	defer delete(plugins, "testapi")
+
+	a, err := NewAPI("testapi")
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		a.Error(w, "", 0)
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	a.ServeHTTP(response, request)
+
+	if response.Code != http.StatusInternalServerError {
+		t.Errorf("API.OK should set 200 if given 0\nexpected: %v\ngot: %v\n", http.StatusOK, response.Code)
+	}
+
 }
