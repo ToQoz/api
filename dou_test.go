@@ -1,6 +1,7 @@
 package dou
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -179,6 +180,41 @@ func TestNewSafeWriterWrite(t *testing.T) {
 		}
 	}).ServeHTTP(response, request)
 }
+
+func TestAPIUnmarshal(t *testing.T) {
+	request, _ := http.NewRequest("GET", `/?json={"name": "ToQoz"}`, nil)
+	response := httptest.NewRecorder()
+
+	Register("testapi", &testAPI{})
+	defer delete(plugins, "testapi")
+
+	// stub testAPI.Marshal
+	testAPIUnmarshal = func(data []byte, v interface{}) error {
+		return json.Unmarshal(data, v)
+	}
+
+	a, err := NewAPI("testapi")
+
+	if err != nil {
+		panic(err)
+	}
+
+	a.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		v := map[string]string{}
+
+		expected := map[string]string{"name": "ToQoz"}
+
+		a.Unmarshal([]byte(request.FormValue("json")), &v)
+
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("fail to Unmarshal.\nexpected: %v\ngot: %v\n", expected, v)
+		}
+	})
+
+	a.ServeHTTP(response, request)
+
+}
+
 func TestAPIOkSetGivenHTTPStatusCodeAndResponseBody(t *testing.T) {
 	request, _ := http.NewRequest("GET", "/", nil)
 	response := httptest.NewRecorder()
