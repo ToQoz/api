@@ -4,8 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/ToQoz/dou/badge.png?branch=master)](https://coveralls.io/r/ToQoz/dou?branch=master)
 [![GoDoc](https://godoc.org/github.com/ToQoz/dou?status.png)](https://godoc.org/github.com/ToQoz/dou)
 
-Package github.com/ToQoz/dou is __tiny__ and __flexible__ toolkit for creating a api server.
-And you can creating a custom plugin in accordance with your api type or domain-specific use-case.
+Package dou is __tiny__ and __flexible__ toolkit for creating a api server.
+And you can creating a custom plugin in accordance with your api type or domain-specific use-case. This is **NOT** framework.
 
 see http://godoc.org/github.com/ToQoz/dou
 
