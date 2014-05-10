@@ -32,7 +32,7 @@ func TestSetDefaultContentType(t *testing.T) {
 	a.ServeHTTP(response, request)
 
 	if response.Header().Get("Content-Type") != "application/json; charset=utf-8" {
-		t.Error("jsonapi.DefaultBeforeDispatch should set default content type `application/json; charset=utf-8`, but got %v", response.Header().Get("Content-Type"))
+		t.Errorf("jsonapi.DefaultBeforeDispatch should set default content type `application/json; charset=utf-8`, but got %v", response.Header().Get("Content-Type"))
 	}
 }
 
